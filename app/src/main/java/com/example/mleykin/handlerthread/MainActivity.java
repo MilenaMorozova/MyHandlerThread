@@ -1,18 +1,12 @@
 package com.example.mleykin.handlerthread;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
@@ -26,16 +20,10 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.InputStream;
-
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int MY_PERMISSIONS_REQUEST_READ_IMAGES = 0;
-    private static final int RESULT_LOAD_IMAGE = 1;
     private Handler mUiHandler = new Handler();
     private MyWorkerThread mWorkerThread;
     private ImageView imageView;
@@ -104,14 +92,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadImage(){
-        /*Bitmap bit = BitmapFactory.decodeFile(imagePaths[0]);
+        Bitmap bit = BitmapFactory.decodeFile(imagePaths[0]);
         Log.e("MY_TAG", bit + "");
-        imageView.setImageBitmap(bit);*/
-        imageView.setImageBitmap(BitmapFactory.decodeFile(imagePaths[0]));
-        Toast.makeText(MainActivity.this, "LOADED!!! " + imagePaths[0], Toast.LENGTH_SHORT).show();
+        imageView.setImageBitmap(bit);
         /*Drawable drawable = Drawable.createFromPath(imagePaths[0]);
         Log.e("MY_TAG_DRAW", drawable + "");
         imageView.setImageDrawable(drawable);*/
+        Toast.makeText(MainActivity.this, "LOADED!!! " + imagePaths[0], Toast.LENGTH_SHORT).show();
         /*Runnable task1 = new Runnable() {
             @Override
             public void run() {
