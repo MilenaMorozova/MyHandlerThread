@@ -1,12 +1,14 @@
 package com.example.mleykin.handlerthread;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
@@ -24,14 +26,16 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
     private static final int MY_PERMISSIONS_REQUEST_READ_IMAGES = 0;
-    private Handler mUiHandler = new Handler();
+    private Handler mUiHandler;
     private MyWorkerThread mWorkerThread;
     private ImageView imageView;
     private String[] imagePaths;
     private Button startButton;
     private Button cancelButton;
+    private boolean isStarted = false;
 
 
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,14 +49,21 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_REQUEST_READ_IMAGES);
         } else {
-            readImagesFromGallery();
-            startButton.setOnClickListener(v -> loadImage());
+            onClicks();
         }
-        /*mWorkerThread = new MyWorkerThread("myWorkerThread");
-
+        mWorkerThread = new MyWorkerThread("myWorkerThread");
         mWorkerThread.start();
-        mWorkerThread.prepareHandler();*/
+        mWorkerThread.prepareHandler();
+        mUiHandler = new Handler(){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                super.handleMessage(msg);
+                Bitmap bit = BitmapFactory.decodeFile(msg.getData().getString("imagePath"));
+                imageView.setImageBitmap(bit);
+            }
+        };
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -62,8 +73,7 @@ public class MainActivity extends AppCompatActivity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay!
-                    readImagesFromGallery();
-                    startButton.setOnClickListener(v -> loadImage());
+                    onClicks();
                     Log.e("MY_TAG", "PERMISSION_GRANTED");
                 } else {
                     Log.e("MY_TAG", "PERMISSION_DENIED");
@@ -75,6 +85,11 @@ public class MainActivity extends AppCompatActivity {
         // other 'case' lines to check for other permissions this app might request
     }
 
+    public void onClicks(){
+        readImagesFromGallery();
+        startButton.setOnClickListener(v -> {loadImage(); isStarted = true;});
+        cancelButton.setOnClickListener(v -> {isStarted = false;});
+    }
 
     private void readImagesFromGallery() {
         Cursor imageCursor = getContentResolver().query(
@@ -92,31 +107,31 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadImage(){
-        Bitmap bit = BitmapFactory.decodeFile(imagePaths[0]);
-        Log.e("MY_TAG", bit + "");
-        imageView.setImageBitmap(bit);
-        /*Drawable drawable = Drawable.createFromPath(imagePaths[0]);
-        Log.e("MY_TAG_DRAW", drawable + "");
-        imageView.setImageDrawable(drawable);*/
-        Toast.makeText(MainActivity.this, "LOADED!!! " + imagePaths[0], Toast.LENGTH_SHORT).show();
-        /*Runnable task1 = new Runnable() {
+        Log.e("MY_TAG_START", "START");
+
+        Runnable task1 = new Runnable() {
             @Override
             public void run() {
-                mUiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        imageView.setImageDrawable(Drawable.createFromPath(imagePaths[0]));
-                        imageView.setScaleType(ImageView.ScaleType.FIT_XY);
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                for (String imagePath : imagePaths) {
+                    try {
+                        if(!isStarted){
+                            return;
                         }
+                        Log.e("MY_TAG", "BEFORE SLEEP");
+                        Bundle bundle = new Bundle();
+                        bundle.putString("imagePath", imagePath);
+                        Message message = new Message();
+                        message.setData(bundle);
+                        mUiHandler.sendMessage(message);
+                        Thread.sleep(1000);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                });
+                }
             }
         };
-        mWorkerThread.postTask(task1);*/
+        mWorkerThread.postTask(task1);
+        Log.e("MY_TAG", "END");
     }
 
     @Override
